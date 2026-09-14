@@ -1,0 +1,49 @@
+# Secrets — never commit these. Patterns are level-agnostic on purpose:
+# there is one .env per module (backend/ and scripts/), not a single root one.
+.env
+*.env
+!*.env.example
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Angular build output and caches
+node_modules/
+dist/
+.angular/
+frontend/out-tsc/
+frontend/tmp/
+frontend/bazel-out/
+frontend/coverage/
+frontend/typings/
+frontend/connect.lock
+frontend/libpeerconnection.log
+.sass-cache/
+__screenshots__/
+npm-debug.log
+yarn-error.log
+testem.log
+
+# IDEs and editors
+.idea/
+.vscode/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.history/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Cloudflare origin certificate and key (mounted on the VPS, never committed)
+secrets/
+
+# Manually captured RAG sources (third-party page copies, kept out of the repo)
+sources/

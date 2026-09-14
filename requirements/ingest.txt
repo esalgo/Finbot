@@ -1,0 +1,4 @@
+# Host-side ingest script only. Never installed in the image.
+-r base.txt
+langchain-text-splitters~=1.1.2
+beautifulsoup4

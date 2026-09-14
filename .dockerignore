@@ -1,0 +1,12 @@
+# Mandatory: keeps secrets and heavy dirs out of the build context.
+# Docker patterns without **/ only match at the context root, so nested
+# dirs (frontend/node_modules, backend/src/__pycache__) need the prefix.
+.venv/
+**/node_modules/
+.git/
+**/.env
+secrets/
+**/__pycache__/
+**/*.pyc
+frontend/dist/
+frontend/.angular/

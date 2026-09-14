@@ -1,0 +1,147 @@
+<div class="app">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M4 19h16v2H4zM6 10h3v7H6zm4.5-4h3v11h-3zM15 13h3v4h-3z"/></svg>
+        </span>
+        <div class="brand-text">
+          <h1>FinBot</h1>
+          <p><span class="dot" aria-hidden="true"></span> Asistente financiero.</p>
+        </div>
+      </div>
+      <button type="button" class="btn-light" (click)="newConversation()" [disabled]="store.sending()">
+        <span aria-hidden="true">＋</span> Nueva conversación
+      </button>
+    </div>
+  </header>
+
+  <main class="messages" #scroller aria-live="polite">
+    <div class="column">
+      @if (store.isEmpty()) {
+        <section class="welcome">
+          <div class="welcome-mark" aria-hidden="true">💬</div>
+          <h2>¿En qué te ayudo hoy?</h2>
+          <p>Consulto datos de mercado en vivo, calculo inversiones, busco en la base de conocimiento sobre regulación
+            financiera colombiana y analizo extractos que adjuntes.</p>
+          <div class="suggestions">
+            @for (s of suggestions; track s.title) {
+              <button type="button" class="suggestion" (click)="ask(s)" [disabled]="store.sending()">
+                <span class="suggestion-icon" aria-hidden="true">{{ s.icon }}</span>
+                <span class="suggestion-text">
+                  <strong>{{ s.title }}</strong>
+                  <small>{{ s.hint }}</small>
+                </span>
+              </button>
+            }
+          </div>
+        </section>
+      }
+
+      @for (message of store.messages(); track $index) {
+        @if (message.role === 'user') {
+          <article class="row user">
+            <div class="bubble user-bubble">
+              @if (message.image) {
+                <img class="thumb" [src]="message.image" alt="Imagen adjunta" />
+              } @else if (message.hadImage) {
+                <p class="image-note">🖼️ Imagen adjunta · no se conserva al recargar</p>
+              }
+              @if (message.content) {
+                <div class="plain">{{ message.content }}</div>
+              }
+            </div>
+          </article>
+        } @else if (message.error) {
+          <article class="row assistant">
+            <span class="avatar error-avatar" aria-hidden="true">!</span>
+            <div class="card error-card" role="alert">
+              <div class="plain">{{ message.content }}</div>
+            </div>
+          </article>
+        } @else {
+          <article class="row assistant">
+            <span class="avatar" aria-hidden="true">F</span>
+            <div class="card">
+              <!-- Origin banner: derived from tools_used and cached, never from the text. -->
+              <div class="origin" [class]="'origin-' + originsOf(message)[0].kind">
+                <div class="origin-labels">
+                  @for (origin of originsOf(message); track origin.kind) {
+                    <span class="origin-label"><span aria-hidden="true">{{ origin.icon }}</span> {{ origin.label }}</span>
+                  }
+                </div>
+                <!-- One badge per tool, by length: [] is truthy and would paint an empty badge. -->
+                @if (message.toolsUsed.length) {
+                  <div class="badges">
+                    @for (tool of message.toolsUsed; track tool) {
+                      <span class="badge" [title]="tool">{{ toolLabel(tool).icon }} {{ toolLabel(tool).label }}</span>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="markdown" [innerHTML]="html(message)"></div>
+            </div>
+          </article>
+        }
+      }
+
+      @if (store.sending()) {
+        <article class="row assistant">
+          <span class="avatar" aria-hidden="true">F</span>
+          <div class="card progress-card" role="status">
+            <div class="progress-line">
+              <span class="spinner" aria-hidden="true"></span>
+              <span>{{ statusLine() }}</span>
+            </div>
+            @if (store.toolsInFlight().length) {
+              <div class="progress-steps">
+                <small>Fuentes consultadas:</small>
+                @for (tool of store.toolsInFlight(); track tool) {
+                  <span class="badge">{{ toolLabel(tool).icon }} {{ toolLabel(tool).label }}</span>
+                }
+              </div>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  </main>
+
+  <footer class="composer-wrap">
+    <form class="composer column" (submit)="submit($event)">
+      @if (attachment(); as preview) {
+        <div class="attachment">
+          <img [src]="preview" alt="Vista previa de la imagen" />
+          <span>Imagen lista para enviar</span>
+          <button type="button" class="link" (click)="clearAttachment()">Quitar</button>
+        </div>
+      }
+      @if (preparingImage()) {
+        <div class="attachment"><span class="spinner" aria-hidden="true"></span><span>Preparando la imagen…</span></div>
+      }
+      @if (attachmentError(); as problem) {
+        <p class="attachment-error" role="alert">{{ problem }}</p>
+      }
+
+      <div class="composer-box" [class.busy]="store.sending()">
+        <input #fileInput type="file" hidden [accept]="acceptedImageTypes" (change)="onFileSelected($event)" />
+        <button type="button" class="icon-btn" (click)="pickImage()" [disabled]="store.sending() || preparingImage()"
+                title="Adjuntar imagen (JPEG, PNG, GIF o WebP, máx. 5 MB)" aria-label="Adjuntar imagen">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M16.5 6.5v10a4.5 4.5 0 0 1-9 0V5a3 3 0 0 1 6 0v10.5a1.5 1.5 0 0 1-3 0V6.5H9v9a3 3 0 0 0 6 0V5a4.5 4.5 0 0 0-9 0v11.5a6 6 0 0 0 12 0v-10z"/></svg>
+        </button>
+        <textarea
+          rows="1"
+          placeholder="Escribe tu pregunta financiera…"
+          [value]="draft()"
+          (input)="draft.set($any($event.target).value)"
+          (keydown)="onKeydown($event)"
+          maxlength="4000"
+          aria-label="Mensaje"></textarea>
+        <button type="submit" class="send-btn" [disabled]="!canSend()" aria-label="Enviar">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>
+        </button>
+      </div>
+      <p class="composer-hint">Enter para enviar · Shift+Enter para nueva línea · FinBot puede equivocarse: verifica los datos importantes.</p>
+    </form>
+  </footer>
+</div>

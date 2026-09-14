@@ -1,0 +1,28 @@
+# Explicit project name: the default (the folder name, "project") collides with
+# unrelated stacks and would reuse their volumes.
+name: finbot
+
+# Development: only the database. The backend runs on the host with
+# `fastapi dev`, so Postgres IS published here. compose.yaml (VPS) never publishes it.
+services:
+  db:
+    image: pgvector/pgvector:0.8.6-pg18
+    environment:
+      POSTGRES_USER: finbot
+      POSTGRES_PASSWORD: finbot
+      POSTGRES_DB: finbot
+    ports:
+      # Bound to loopback: Docker bypasses host firewalls like ufw.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql
+      # Runs only when the volume is empty (first start).
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finbot -d finbot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db_data:

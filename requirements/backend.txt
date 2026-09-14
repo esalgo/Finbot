@@ -1,0 +1,8 @@
+# HTTP runtime. The only file the backend image installs.
+-r base.txt
+fastapi[standard]~=0.141           # bundles uvicorn + python-multipart
+langgraph~=1.2.11
+langchain~=1.4.0                   # create_agent (replaces the deprecated langgraph.prebuilt.create_react_agent)
+langgraph-checkpoint-postgres~=3.1.2  # writes its own schema on setup(): a minor bump may migrate saved threads
+openai~=3.13                       # pinned explicitly per STACK.md; voice (Whisper/TTS) is not implemented
+numpy

@@ -1,0 +1,9 @@
+# Shared by the backend image and the host-side ingest script.
+# Intent only: exact versions live in requirements.lock.txt (generated, never by hand).
+# LangChain family: ~=X.Y.Z (minor ceiling), except 0.0.x packages (==). Stable libs: ~=X.Y (major ceiling).
+langchain-core~=1.6.3
+langchain-openai~=1.6.2            # chat (any OpenAI-compatible provider) + embeddings (always OpenAI)
+langchain-postgres==0.0.17         # PGVectorStore + PGEngine; exact pin: in a 0.0.x series any patch may break
+psycopg[binary,pool]~=3.3          # psycopg3; langchain-postgres does not support psycopg2
+httpx~=0.28
+python-dotenv
